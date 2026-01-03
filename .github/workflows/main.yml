@@ -66,14 +66,15 @@ jobs:
           sed -i "s|image: omjaju18/weather-app:.*|image: omjaju18/weather-app:${{ env.VERSION }}|g" deploy/deploy.yaml
           cat deploy/deploy.yaml
 
-      # Update Github
       - name: Commit the changes
         run: |
-          git config user.name "GitHub Actions"
-          git config user.email "actions@github.com"
+          git config user.name "omjaju18"
+          git config user.email "omjaju03@gmail.com"
           git add deploy/deploy.yaml
-          git remote set-url origin https://github-actions:${{ secrets.TOKEN }}@github.com/omjaju18/Flask-App-GitHub-Actions-ArgoCD.git
-          git push
+          git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}" || echo "No changes to commit"
+          git remote set-url origin https://omjaju18:${{ secrets.TOKEN }}@github.com/omjaju18/Flask-App-GitHub-Actions-ArgoCD.git
+          git push origin master
+
 
 
 
