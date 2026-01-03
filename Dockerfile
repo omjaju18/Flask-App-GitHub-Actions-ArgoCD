@@ -1,20 +1,20 @@
-FROM python:3.14.0a3-alpine3.21
+# Use a stable Python version
+FROM python:3.12-slim
 
-# Set the working directory
+# Set working directory
 WORKDIR /app
 
-# Copy the current directory contents into the container at /app
-COPY . . 
+# Copy requirements first for caching
+COPY requirements.txt .
 
-# Install any needed packages specified in requirements.txt
-RUN pip install -r requirements.txt
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
 
-#Expose the port
+# Copy rest of the app
+COPY . .
+
+# Expose Flask port
 EXPOSE 5000
 
-# Run app.py when the container launches
+# Run the app
 CMD ["python", "app.py"]
-
-
-
-
