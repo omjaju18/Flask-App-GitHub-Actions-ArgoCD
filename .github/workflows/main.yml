@@ -1,5 +1,7 @@
 name: Test and Build
 
+# Trigger this workflow on push to master branch
+# and for any changes in any file
 on:
   push:
     branches:
@@ -9,74 +11,105 @@ on:
 
 jobs:
   build:
-    runs-on: ubuntu-latest
+    runs-on: ubuntu-latest   # Use the latest Ubuntu runner
 
     steps:
-    #Setting up environment
+      # -------------------------------
+      # Step 1: Checkout code from repo
+      # -------------------------------
       - name: Checkout code
         uses: actions/checkout@v3
         with:
-          persist-credentials: false
+          persist-credentials: false  
+          # Set to false because we will push using our own PAT.
+          # If true, GitHub Actions uses the github-actions bot token instead.
 
+      # -------------------------------
+      # Step 2: Set up Python environment
+      # -------------------------------
       - name: Setup Python
         uses: actions/setup-python@v2
         with:
-          python-version: '3.9'
+          python-version: '3.9'  # Use Python 3.9 for consistency
 
+      # -------------------------------
+      # Step 3: Setup Docker Buildx
+      # -------------------------------
       - name: Docker Setup
         uses: docker/setup-buildx-action@v2
+        # Allows advanced Docker builds, multi-platform builds, and caching
 
+      # -------------------------------
+      # Step 4: Install dependencies
+      # -------------------------------
       - name: Install dependencies
         run: |
-          python -m pip install --upgrade pip
-          pip install -r requirements.txt
-          pip install flake8
-          
-      # Test the Code
+          python -m pip install --upgrade pip   # Upgrade pip to latest version
+          pip install -r requirements.txt      # Install Python dependencies
+          pip install flake8                    # Install flake8 for linting
+
+      # -------------------------------
+      # Step 5: Run Linting tests
+      # -------------------------------
       - name: Run Linting tests
         run: |
-          flake8 --ignore=E501,F401 .
-      
+          flake8 --ignore=E501,F401 .  # Check code style and imports
+          # Ignore long line errors (E501) and unused imports (F401)
+
+      # -------------------------------
+      # Step 6: Docker login
+      # -------------------------------
       - name: Docker Credentials
         uses: docker/login-action@v2
         with:
-          username: ${{ secrets.DOCKER_USERNAME }}
-          password: ${{ secrets.DOCKER_PASSWORD }}
-      
+          username: ${{ secrets.DOCKER_USERNAME }}  # DockerHub username from secrets
+          password: ${{ secrets.DOCKER_PASSWORD }}  # DockerHub password/token from secrets
+
+      # -------------------------------
+      # Step 7: Create version tag for Docker image
+      # -------------------------------
       - name: Docker tag
         id: version
         run: |
-          VERSION=v$(date +"%Y%m%d%H%M%S")
-          echo "VERSION=$VERSION" >> $GITHUB_ENV
+          VERSION=v$(date +"%Y%m%d%H%M%S")  # Create timestamped version, e.g., v20260103143001
+          echo "VERSION=$VERSION" >> $GITHUB_ENV  # Save to GitHub environment variable
 
-      # Build the Docker Image
+      # -------------------------------
+      # Step 8: Build Docker image
+      # -------------------------------
       - name: Build Docker Image
         run: |
-          docker build . -t omjaju18/weather-app:${{ env.VERSION }} 
-      
-      # Push the Docker Image
+          docker build . -t omjaju18/weather-app:${{ env.VERSION }}  
+          # Build Docker image and tag with version
+
+      # -------------------------------
+      # Step 9: Push Docker image to DockerHub
+      # -------------------------------
       - name: Push Docker Image
         run: |
-          docker push omjaju18/weather-app:${{ env.VERSION }}
-      
-      # UPdate the K8s Manifest Files
+          docker push omjaju18/weather-app:${{ env.VERSION }}  
+          # Push the built image to your DockerHub repository
+
+      # -------------------------------
+      # Step 10: Update Kubernetes manifests
+      # -------------------------------
       - name: Update K8s Manifests
         run: |
-          cat deploy/deploy.yaml
+          cat deploy/deploy.yaml  # Show current manifest
+          # Update the container image in deploy.yaml to new version
           sed -i "s|image: omjaju18/weather-app:.*|image: omjaju18/weather-app:${{ env.VERSION }}|g" deploy/deploy.yaml
-          cat deploy/deploy.yaml
+          cat deploy/deploy.yaml  # Show updated manifest
 
+      # -------------------------------
+      # Step 11: Commit and push updated manifest
+      # -------------------------------
       - name: Commit the changes
         run: |
-          git config user.name "omjaju18"
-          git config user.email "omjaju03@gmail.com"
-          git add deploy/deploy.yaml
+          git config user.name "omjaju18"               # Set Git commit username
+          git config user.email "omjaju03@gmail.com"    # Set Git commit email
+          git add deploy/deploy.yaml                     # Stage the updated file
           git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}" || echo "No changes to commit"
+          # Commit changes, or ignore if no changes
+          # Set the remote URL with your PAT for authentication
           git remote set-url origin https://omjaju18:${{ secrets.TOKEN }}@github.com/omjaju18/Flask-App-GitHub-Actions-ArgoCD.git
-          git push origin master
-
-
-
-
-        
-      
+          git push origin master  # Push changes to master branch
