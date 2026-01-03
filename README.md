@@ -68,34 +68,37 @@ We will create Dockerfile. If you don't know what is docker, please read some ba
 
 Write Dockerfile
 ```
-# Step 1: Base image
-FROM python:3.9-slim
+# Use a stable Python version
+FROM python:3.12-slim
 
-# Step 2: Set working directory
+# Set working directory
 WORKDIR /app
 
-# Step 3: Copy application code to the container
+# Copy requirements first for caching
+COPY requirements.txt .
+
+# Install dependencies
+RUN pip install --no-cache-dir -r requirements.txt
+
+# Copy rest of the app
 COPY . .
 
-# Step 4: Install dependencies
-RUN pip install -r requirements.txt
-
-# Step 5: Expose the application port
+# Expose Flask port
 EXPOSE 5000
 
-# Step 6: Define the command to run the application
+# Run the app
 CMD ["python", "app.py"]
 ```
 #### Lets Build and Run the Container
 1. Build the Image: Run the following in the directory containing your Dockerfile:
 ```
-docker build -t 1nfosecsingh/demo-app:v1 .
+docker build -t omjaju18/demo-app:v1 .
 ```
 Note: you need to change the name of your image, according to your dockerhub username.
 
 2. Lets create container with image.
  ```
- docker run -d -p 5000:5000 --name=demo-app demo-app
+ docker run -d -p 8080:5000 --name demoapp demoapp:v1
  ```
 
  If everything is working fine and you are able to access application with https://localhost:5000 then next step is to write a GitHub Pipeline.
@@ -107,81 +110,122 @@ Note: you need to change the name of your image, according to your dockerhub use
     ```
 2. Create your first pipeline for TEST and BUILD the image. make sure it should be yaml file
     ```
-    name: Test and Build
+  name: Test and Build
 
-    on:
-    push:
-        branches:
-        - master
-        paths:
-        - '**/*'
+# Trigger this workflow on push to master branch
+# and for any changes in any file
+on:
+  push:
+    branches:
+      - master
+    paths:
+      - '**/*'
 
-    jobs:
-    build:
-        runs-on: ubuntu-latest
+jobs:
+  build:
+    runs-on: ubuntu-latest   # Use the latest Ubuntu runner
 
-        steps:
-        #Setting up environment
-        - name: Checkout code
-            uses: actions/checkout@v2
+    steps:
+      # -------------------------------
+      # Step 1: Checkout code from repo
+      # -------------------------------
+      - name: Checkout code
+        uses: actions/checkout@v3
+        with:
+          persist-credentials: false  
+          # Set to false because we will push using our own PAT.
+          # If true, GitHub Actions uses the github-actions bot token instead.
 
-        - name: Setup Python
-            uses: actions/setup-python@v2
-            with:
-            python-version: '3.9'
+      # -------------------------------
+      # Step 2: Set up Python environment
+      # -------------------------------
+      - name: Setup Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: '3.9'  # Use Python 3.9 for consistency
 
-        - name: Docker Setup
-            uses: docker/setup-buildx-action@v2
+      # -------------------------------
+      # Step 3: Setup Docker Buildx
+      # -------------------------------
+      - name: Docker Setup
+        uses: docker/setup-buildx-action@v2
+        # Allows advanced Docker builds, multi-platform builds, and caching
 
-        - name: Install dependencies
-            run: |
-            python -m pip install --upgrade pip
-            pip install -r requirements.txt
-            pip install flake8
-            
-        # Test the Code
-        - name: Run Linting tests
-            run: |
-            flake8 --ignore=E501,F401 .
-        
-        - name: Docker Credentials
-            uses: docker/login-action@v2
-            with:
-            username: ${{ secrets.DOCKER_USERNAME }}
-            password: ${{ secrets.DOCKER_PASSWORD }}
-        
-        - name: Docker tag
-            id: version
-            run: |
-            VERSION=v$(date +"%Y%m%d%H%M%S")
-            echo "VERSION=$VERSION" >> $GITHUB_ENV
+      # -------------------------------
+      # Step 4: Install dependencies
+      # -------------------------------
+      - name: Install dependencies
+        run: |
+          python -m pip install --upgrade pip   # Upgrade pip to latest version
+          pip install -r requirements.txt      # Install Python dependencies
+          pip install flake8                    # Install flake8 for linting
 
-        # Build the Docker Image
-        - name: Build Docker Image
-            run: |
-            docker build . -t 1nfosecsingh/demo-app:${{ env.VERSION }} 
-        
-        # Push the Docker Image
-        - name: Push Docker Image
-            run: |
-            docker push 1nfosecsingh/demo-app:${{ env.VERSION }}
-        
-        # UPdate the K8s Manifest Files
-        - name: Update K8s Manifests
-            run: |
-            cat deploy/deploy.yaml
-            sed -i "s|image: 1nfosecsingh/demo-app:.*|image: 1nfosecsingh/demo-app:${{ env.VERSION }}|g" deploy/deploy.yaml
-            cat deploy/deploy.yaml
+      # -------------------------------
+      # Step 5: Run Linting tests
+      # -------------------------------
+      - name: Run Linting tests
+        run: |
+          flake8 --ignore=E501,F401 .  # Check code style and imports
+          # Ignore long line errors (E501) and unused imports (F401)
 
-        # Update Github
-        - name: Commit the changes
-            run: |
-            git config --global user.email "<infosecsingh@gmail.com>"
-            git config --global user.name "GitHub Actions Bot"
-            git add deploy/deploy.yaml
-            git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}"
-            git remote set-url origin https://github-actions:${{ secrets.GITHUB_TOKEN }}@github.com/infosecsingh/Flask-App-GitHub-Actions-ArgoCD.git
-            git push origin master
+      # -------------------------------
+      # Step 6: Docker login
+      # -------------------------------
+      - name: Docker Credentials
+        uses: docker/login-action@v2
+        with:
+          username: ${{ secrets.DOCKER_USERNAME }}  # DockerHub username from secrets
+          password: ${{ secrets.DOCKER_PASSWORD }}  # DockerHub password/token from secrets
+
+      # -------------------------------
+      # Step 7: Create version tag for Docker image
+      # -------------------------------
+      - name: Docker tag
+        id: version
+        run: |
+          VERSION=v$(date +"%Y%m%d%H%M%S")  # Create timestamped version, e.g., v20260103143001
+          echo "VERSION=$VERSION" >> $GITHUB_ENV  # Save to GitHub environment variable
+
+      # -------------------------------
+      # Step 8: Build Docker image
+      # -------------------------------
+      - name: Build Docker Image
+        run: |
+          docker build . -t omjaju18/weather-app:${{ env.VERSION }}  
+          # Build Docker image and tag with version
+
+      # -------------------------------
+      # Step 9: Push Docker image to DockerHub
+      # -------------------------------
+      - name: Push Docker Image
+        run: |
+          docker push omjaju18/weather-app:${{ env.VERSION }}  
+          # Push the built image to your DockerHub repository
+
+      # -------------------------------
+      # Step 10: Update Kubernetes manifests
+      # -------------------------------
+      - name: Update K8s Manifests
+        run: |
+          cat deploy/deploy.yaml  # Show current manifest
+          # Update the container image in deploy.yaml to new version
+          sed -i "s|image: omjaju18/weather-app:.*|image: omjaju18/weather-app:${{ env.VERSION }}|g" deploy/deploy.yaml
+          cat deploy/deploy.yaml  # Show updated manifest
+
+      # -------------------------------
+      # Step 11: Commit and push updated manifest
+      # -------------------------------
+      - name: Commit the changes
+        run: |
+          git config user.name "omjaju18"               # Set Git commit username
+          git config user.email "omjaju03@gmail.com"    # Set Git commit email
+          git add deploy/deploy.yaml                     # Stage the updated file
+          git commit -m "Update deploy.yaml with new image version - ${{ env.VERSION }}" || echo "No changes to commit"
+          # Commit changes, or ignore if no changes
+          # Set the remote URL with your PAT for authentication
+          git remote set-url origin https://omjaju18:${{ secrets.TOKEN }}@github.com/omjaju18/Flask-App-GitHub-Actions-ArgoCD.git
+          git push origin master  # Push changes to master branch
+
     ```
 
 1. Make sure setup your docker Personal Access token into github repo. 
