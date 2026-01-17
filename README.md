@@ -2,6 +2,49 @@
 ### Deploy Python Flask App on Kubernetes cluster with GitOps Approach. 
 
 ![alt text](imgs/arch.png)
+-----
+
+### Project Screenshots
+
+Got it 👍
+Here is **ONLY the Project Screenshots section** in **README.md format**, nothing extra added.
+
+---
+
+## 📸 Project Screenshots
+
+### 🚀 GitHub Actions CI Pipeline
+
+<img width="959" height="386" alt="GA Pipeline" src="https://github.com/user-attachments/assets/22980920-cb1c-4193-a9bb-0d897ff513a0" />
+
+---
+
+### 📦 Docker Image Pushed to Registry
+
+<img width="950" height="266" alt="Image Pushed" src="https://github.com/user-attachments/assets/f5f7e462-1d92-4aef-a5b6-da695d11ebc7" />
+
+---
+
+### 🔄 Argo CD Deployment Dashboard
+
+<img width="951" height="466" alt="ArgoCD" src="https://github.com/user-attachments/assets/4b717e88-07ed-4b58-869e-4ad6fd80d5ec" />
+
+---
+
+### 🌐 Application Running Successfully
+
+<img width="954" height="368" alt="App" src="https://github.com/user-attachments/assets/1aecff70-6a88-4611-aa43-7ee115b50398" />
+
+---
+
+### ☸️ Kubernetes Pods Status
+
+<img width="617" height="187" alt="Pods" src="https://github.com/user-attachments/assets/63a22d41-3a99-403f-a420-2806cfeefb03" />
+
+---
+
+### 🔁 Application Updated After New Changes
+<img width="955" height="347" alt="Update After new Changes" src="https://github.com/user-attachments/assets/2482d0a8-6a86-4907-be67-944fafe43784" />
 
 ---
 ### Workflow:
