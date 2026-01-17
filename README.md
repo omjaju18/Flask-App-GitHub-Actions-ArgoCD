@@ -79,7 +79,7 @@ Whenever we are creating pipeline, it is best practice to test application local
 
 - Clone/Fork the Repo. 
     ```
-    git clone https://github.com/infosecsingh/Flask-App-GitHub-Actions-ArgoCD.git
+    git clone https://github.com/omjaju18/Flask-App-GitHub-Actions-ArgoCD.git
     cd Flask-App-GitHub-Actions-ArgoCD
     ```
 - Install Dependence
