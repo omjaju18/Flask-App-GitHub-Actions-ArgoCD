@@ -3,7 +3,7 @@ kind: Deployment
 metadata:
   name: weather-app-deployment
 spec:
-  replicas: 2
+  replicas: 0 #to avoid pipeline to run continuously
   selector:
     matchLabels:
       app: weather-app
