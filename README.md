@@ -4,13 +4,6 @@
 ![alt text](imgs/arch.png)
 -----
 
-### Project Screenshots
-
-Got it 👍
-Here is **ONLY the Project Screenshots section** in **README.md format**, nothing extra added.
-
----
-
 ## 📸 Project Screenshots
 
 ### 🚀 GitHub Actions CI Pipeline
